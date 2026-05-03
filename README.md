@@ -1,105 +1,145 @@
 # AI Car Tuning Editor
 
-An application where users upload a car photo, describe what they want changed ("add a spoiler", "swap the wheels"), and an AI agent handles semantic search, segmentation, and image inpainting to produce photorealistic results.
+Веб-приложение для визуального тюнинга автомобилей с помощью ИИ. Пользователь загружает фото машины, описывает желаемые изменения («поставь карбоновый спойлер», «смени колёса»), а ИИ-агент самостоятельно ищет деталь в базе, сегментирует нужную область и генерирует фотореалистичный результат.
 
-## Services
+## Архитектура
 
-| Service | Description |
-|---------|-------------|
-| `accessories_processing` | Manages the parts library — uploads, background removal, embedding generation, and semantic search |
-| `core_service` | LLM agent that orchestrates the full tuning pipeline end-to-end |
-| `frontend` | React UI — Studio page is the main UX |
-
-## API Endpoints
-
-### Parts Library (`/api/parts`)
-- `POST /upload` — upload accessory image (triggers background removal + embedding)
-- `GET /` — list parts, filterable by category/domain
-- `GET /{id}` — get single part metadata
-- `DELETE /{id}` — delete part
-- `POST /search` — semantic/vector search over parts
-
-### Agent Sessions (`/api/agent`) — main UX
-- `POST /sessions` — start a session (car image + text prompt)
-- `GET /sessions/{id}` — get session state and results
-- `GET /sessions/{id}/stream` — SSE stream of live agent events
-
-### Jobs (`/api/jobs`) — manual/advanced mode
-- `POST /create` — create an inpainting job with a specific part selected
-- `GET /` — list all jobs
-- `GET /{id}` — get job details and result image URLs
-
-### Infrastructure
-- `GET /health` — healthcheck
-- `GET /storage/{category}/{filename}` — serve stored images (originals/processed/masks/results)
-
-## Tools & Services Required
-
-| Tool | Purpose |
-|------|---------|
-| PostgreSQL 16 + pgvector | Main DB + vector similarity search |
-| Redis 7 | Task queue backend (SAQ workers) |
-| OpenAI API | LLM powering the ReAct agent (optional — falls back to stub) |
-| Polza.ai | FLUX inpainting API (primary image generation provider) |
-| SAM2 | Image segmentation (requires manual checkpoint download) |
-| GroundingDINO | Object detection and localization (requires manual setup) |
-| rembg | Background removal for uploaded part images |
-| sentence-transformers | Generates embeddings for semantic search |
-
-## Environment Variables
-
-```env
-DATABASE_URL=postgres://...
-REDIS_URL=redis://...
-
-INPAINT_PROVIDER=stub|sdxl|replicate|polza
-POLZA_AI_API_KEY=         # for polza.ai FLUX
-OPENAI_API_KEY=           # for real LLM agent (omit = stub mode)
-
-SAM2_CHECKPOINT=          # path to SAM2 .pt checkpoint
-SAM2_CONFIG=              # path to SAM2 config yaml
-GROUNDING_DINO_CONFIG=
-GROUNDING_DINO_CHECKPOINT=
-
-STORAGE_PATH=             # local filesystem path for image storage
-CORS_ORIGINS=             # comma-separated allowed origins
+```
+diploma_fixed/
+├── accessories_processing/   # Сервис библиотеки деталей (FastAPI + SAQ)
+├── core_service/             # ИИ-агент и пайплайн генерации (FastAPI + SAQ)
+├── frontend/                 # SvelteKit UI
+├── infra/                    # SQL-инициализация БД
+└── docker-compose.yml        # postgres + redis + accessories сервисы
 ```
 
-## What's Implemented
+### Сервисы
 
-- FastAPI backend with async SQLAlchemy and PostgreSQL
-- LangGraph pipelines for part preparation and inpainting jobs
-- Pluggable inpainting providers: stub / SDXL (local) / Replicate / Polza.ai (FLUX)
-- LangChain ReAct agent with tools: `search_components`, `segment_object`, `generate_image`
-- SSE streaming of agent events to frontend in real time
-- React frontend with Studio as main user-facing page
-- Docker-compose setup for all infrastructure
+| Сервис | Порт | Описание |
+|--------|------|----------|
+| `accessories_processing` | 8000 | Загрузка деталей, удаление фона, генерация эмбеддингов, семантический поиск |
+| `core_service` | 8001 | LangChain ReAct агент: сегментация → поиск → инпейнтинг |
+| `frontend` | 5173 | Studio — основной интерфейс пользователя |
 
-## What's Missing / Needs Work
+## Быстрый старт
 
-**Critical:**
-- No authentication — all endpoints are fully public; anyone can exhaust inpainting API quota
-- No rate limiting on expensive external calls (Polza, OpenAI)
-- No image validation — no size limits or format checks before processing
-- SAM2 and GroundingDINO setup is manual and undocumented (checkpoint download, path config)
-
-**Frontend:**
-- `Editor.jsx` and `Gallery.jsx` pages are incomplete/unused
-- No UI for correcting bad segmentation masks
-- No batch processing, favorites, or history
-
-**Operational:**
-- No monitoring or error alerting
-- DB migration file ordering unclear
-- `VITE_API_BASE` hardcoded to localhost as frontend fallback
-- No OpenAPI/Swagger docs published
-
-## Running Locally
+### 1. Инфраструктура (postgres + redis + accessories)
 
 ```bash
-docker-compose up
+docker-compose up -d
 ```
 
-Backend available at `http://localhost:8000`, frontend at `http://localhost:5173`.
+### 2. Core Service (запускается локально — требует ML-моделей)
 
-For the agent to use a real LLM, set `OPENAI_API_KEY`. Without it, the stub agent runs deterministic demo flows at no cost.
+```bash
+cd core_service
+cp .env.example .env   # заполни ключи
+uv sync
+uv run uvicorn app.main:app --port 8001 --reload &
+uv run python -m app.workers.worker &
+```
+
+### 3. Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Открой `http://localhost:5173`
+
+## Переменные окружения (core_service/.env)
+
+```env
+# Инфраструктура
+DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/core_db
+REDIS_URL=redis://localhost:6379
+STORAGE_PATH=./storage
+CORS_ORIGINS=http://localhost:5173
+ACCESSORIES_SERVICE_URL=http://localhost:8000
+
+# LLM агент
+LLM_PROVIDER=openai_compatible   # openai | anthropic | openai_compatible
+LLM_API_KEY=
+LLM_MODEL=moonshotai/kimi-k2.6
+LLM_BASE_URL=https://polza.ai/api/v1   # только для openai_compatible
+
+# Провайдер инпейнтинга
+INPAINT_PROVIDER=polza   # polza | genapi | klein | kontext | gpt_image | sdxl | diffusers
+
+# polza.ai (FLUX.2 Pro — основной)
+POLZA_AI_API_KEY=
+POLZA_MODEL=black-forest-labs/flux.2-pro
+
+# gen-api.ru (FLUX Inpainting / Klein / Kontext)
+GENAPI_API_KEY=
+GENAPI_MODEL=inpainting
+GENAPI_KLEIN_MODEL=4B Standard
+GENAPI_KONTEXT_MODEL=max
+
+# OpenAI GPT Image
+GPT_IMAGE_MODEL=openai/gpt-image-1.5
+
+# Локальные модели (опционально)
+SAM2_CHECKPOINT=./models/sam2_hiera_base_plus.pt
+SAM2_CONFIG=sam2_hiera_b+
+GROUNDING_DINO_CONFIG=./models/GroundingDINO_SwinT_OGC.py
+GROUNDING_DINO_CHECKPOINT=./models/groundingdino_swint_ogc.pth
+HF_TOKEN=   # для загрузки FLUX Fill с HuggingFace
+```
+
+## ML-модели (сегментация)
+
+Для сегментации нужны SAM2 и GroundingDINO. Скачать чекпойнты:
+
+```bash
+mkdir -p core_service/models
+# SAM2
+wget -P core_service/models https://dl.fbaipublicfiles.com/segment_anything_2/092824/sam2.1_hiera_base_plus.pt
+
+# GroundingDINO
+wget -P core_service/models https://github.com/IDEA-Research/GroundingDINO/releases/download/v0.1.0-alpha/groundingdino_swint_ogc.pth
+wget -P core_service/models https://raw.githubusercontent.com/IDEA-Research/GroundingDINO/main/groundingdino/config/GroundingDINO_SwinT_OGC.py
+```
+
+## API
+
+### Accessories Service (`localhost:8000`)
+
+| Метод | Путь | Описание |
+|-------|------|----------|
+| `POST` | `/api/parts/upload` | Загрузить деталь (фото → удаление фона → эмбеддинг) |
+| `GET` | `/api/parts/` | Список деталей |
+| `POST` | `/api/parts/search` | Семантический поиск по описанию |
+| `DELETE` | `/api/parts/{id}` | Удалить деталь |
+
+### Core Service (`localhost:8001`)
+
+| Метод | Путь | Описание |
+|-------|------|----------|
+| `POST` | `/api/agent/sessions` | Создать сессию (фото авто + промпт) |
+| `GET` | `/api/agent/sessions/{id}` | Статус и результаты сессии |
+| `GET` | `/api/agent/sessions/{id}/stream` | SSE-стрим событий агента |
+| `GET` | `/storage/{category}/{filename}` | Отдача сохранённых изображений |
+
+## Провайдеры инпейнтинга
+
+| Провайдер | Ключ `.env` | Маска | Референс | Примечание |
+|-----------|-------------|-------|----------|------------|
+| polza.ai FLUX.2 Pro | `polza` | ✅ | ✅ | Лучший результат |
+| gen-api FLUX Inpaint | `genapi` | ✅ | ✅ (pre-paste) | Маска-based |
+| gen-api Flux 2 Klein | `klein` | — | ✅ | img2img |
+| gen-api Flux Kontext | `kontext` | — | ✅ | img2img |
+| GPT Image 1 | `gpt_image` | soft | — | Регенерирует всё |
+| FLUX Fill (локально) | `diffusers` | ✅ | — | Требует GPU |
+| SDXL (локально) | `sdxl` | ✅ | — | Требует GPU |
+
+## Стек
+
+- **Backend**: FastAPI, SQLAlchemy (async), Alembic, SAQ
+- **ML**: LangChain ReAct agent, SAM2, GroundingDINO, sentence-transformers
+- **БД**: PostgreSQL 16 + pgvector
+- **Очередь**: Redis + SAQ
+- **Frontend**: SvelteKit, Vite
+- **Инфра**: Docker Compose
