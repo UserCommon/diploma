@@ -1,0 +1,102 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgres   # default db; init.sql creates the real ones
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user"]
+      interval: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  # ── Accessories Processing ─────────────────────────────────────────────────
+
+  accessories-api:
+    build: ./accessories_processing
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://user:password@postgres:5432/accessories_db
+      REDIS_URL: redis://redis:6379
+      STORAGE_PATH: /app/storage
+      CORS_ORIGINS: http://localhost:5173
+    volumes:
+      - accessories_storage:/app/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  accessories-worker:
+    build: ./accessories_processing
+    environment:
+      DATABASE_URL: postgresql+asyncpg://user:password@postgres:5432/accessories_db
+      REDIS_URL: redis://redis:6379
+      STORAGE_PATH: /app/storage
+    volumes:
+      - accessories_storage:/app/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    command: python -m app.workers.worker
+
+  # ── Core Service ───────────────────────────────────────────────────────────
+  # Start with: docker-compose --profile core up
+
+  core-api:
+    profiles: [core]
+    build: ./core_service
+    ports:
+      - "8001:8001"
+    env_file: ./core_service/.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://user:password@postgres:5432/core_db
+      REDIS_URL: redis://redis:6379
+      STORAGE_PATH: /app/storage
+      ACCESSORIES_SERVICE_URL: http://accessories-api:8000
+    volumes:
+      - core_storage:/app/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
+
+  core-worker:
+    profiles: [core]
+    build: ./core_service
+    env_file: ./core_service/.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://user:password@postgres:5432/core_db
+      REDIS_URL: redis://redis:6379
+      STORAGE_PATH: /app/storage
+      ACCESSORIES_SERVICE_URL: http://accessories-api:8000
+    volumes:
+      - core_storage:/app/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    command: python -m app.workers.worker
+
+volumes:
+  pgdata:
+  accessories_storage:
+  core_storage:

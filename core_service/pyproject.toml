@@ -1,0 +1,63 @@
+[project]
+name = "core-service"
+version = "0.1.0"
+description = "LLM agent orchestrating car tuning: segmentation, semantic search, inpainting"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi==0.115.0",
+    "uvicorn[standard]==0.30.6",
+    "sqlalchemy[asyncio]==2.0.35",
+    "asyncpg==0.29.0",
+    "alembic==1.13.3",
+    "pydantic-settings==2.5.2",
+    "python-multipart==0.0.12",
+    "saq==0.12.3",
+    "redis==5.1.0",
+    "httpx==0.27.2",
+    "langchain==0.3.7",
+    "langchain-openai==0.2.6",
+    "langchain-anthropic>=0.2.0",
+    "langchain-community==0.3.7",
+    "langgraph==0.2.35",
+    "Pillow==10.4.0",
+    "numpy==1.26.4",
+    "torch==2.4.1",
+    "torchvision==0.19.1",
+    "sse-starlette==2.1.3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "mypy==1.11.2",
+    "types-Pillow",
+    "types-redis",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.mypy]
+strict = true
+python_version = "3.11"
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = [
+    "saq.*",
+    "alembic.*",
+    "asyncpg.*",
+    "sam2.*",
+    "groundingdino.*",
+    "torchvision.*",
+    "langchain.*",
+    "langchain_core.*",
+    "langchain_openai.*",
+    "langchain_community.*",
+    "langgraph.*",
+]
+ignore_missing_imports = true
