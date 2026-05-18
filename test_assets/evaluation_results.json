@@ -1,0 +1,128 @@
+{
+  "catalog": {
+    "total": 4,
+    "ready": 4,
+    "pending": 0,
+    "failed": 0,
+    "categories": {
+      "wheel": 2,
+      "spoiler": 1,
+      "headlights": 1
+    }
+  },
+  "search": {
+    "precision_at_1": 0.7,
+    "precision_at_3": 0.7,
+    "avg_latency_ms": 24.774486082606018,
+    "details": [
+      {
+        "query": "spoiler",
+        "p1": 1,
+        "p3": 1,
+        "latency_ms": 19.459833012660965,
+        "top": [
+          "gt wing spoiler"
+        ]
+      },
+      {
+        "query": "rear wing carbon spoiler",
+        "p1": 1,
+        "p3": 1,
+        "latency_ms": 16.136874997755513,
+        "top": [
+          "gt wing spoiler"
+        ]
+      },
+      {
+        "query": "gt wing",
+        "p1": 1,
+        "p3": 1,
+        "latency_ms": 26.57770799123682,
+        "top": [
+          "gt wing spoiler"
+        ]
+      },
+      {
+        "query": "антикрыло спойлер",
+        "p1": 0,
+        "p3": 0,
+        "latency_ms": 71.00466699921526,
+        "top": []
+      },
+      {
+        "query": "wheels rims sport",
+        "p1": 1,
+        "p3": 1,
+        "latency_ms": 13.695874979021028,
+        "top": [
+          "volk_racing_1"
+        ]
+      },
+      {
+        "query": "sport rims",
+        "p1": 1,
+        "p3": 1,
+        "latency_ms": 19.82645899988711,
+        "top": [
+          "volk_racing_1"
+        ]
+      },
+      {
+        "query": "volk racing",
+        "p1": 1,
+        "p3": 1,
+        "latency_ms": 19.65724999899976,
+        "top": [
+          "volk_racing_1"
+        ]
+      },
+      {
+        "query": "диски колёса",
+        "p1": 0,
+        "p3": 0,
+        "latency_ms": 21.325207984773442,
+        "top": []
+      },
+      {
+        "query": "headlights audi",
+        "p1": 1,
+        "p3": 1,
+        "latency_ms": 17.456292000133544,
+        "top": [
+          "audi_a4"
+        ]
+      },
+      {
+        "query": "фары ауди",
+        "p1": 0,
+        "p3": 0,
+        "latency_ms": 14.246250008000061,
+        "top": []
+      },
+      {
+        "query": "тонировка стёкла",
+        "p1": 1,
+        "p3": 1,
+        "latency_ms": 23.000540997600183,
+        "top": []
+      },
+      {
+        "query": "межпланетный корабль",
+        "p1": 1,
+        "p3": 1,
+        "latency_ms": 34.906875021988526,
+        "top": []
+      }
+    ]
+  },
+  "pipeline": {
+    "status": "complete",
+    "total_s": 66.8,
+    "step_times": {
+      "search_parts": 0.0,
+      "segment_object": 0.0
+    },
+    "result_count": 0,
+    "session_id": "3367192c-3772-4999-ada6-f37879e1a232"
+  }
+}

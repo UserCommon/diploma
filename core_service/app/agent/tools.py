@@ -31,7 +31,7 @@ async def search_parts(query: str, domain: str = "car") -> str:
     Returns:
         JSON list of matching parts with id, name, category, processed_image_url
     """
-    async with httpx.AsyncClient(timeout=10) as client:
+    async with httpx.AsyncClient(timeout=60) as client:
         resp = await client.post(
             f"{settings.ACCESSORIES_SERVICE_URL}/api/parts/search",
             json={"query": query, "domain": domain, "limit": 5},
