@@ -13,7 +13,10 @@ def _patch_tokenizers_check() -> None:
     # transformers import chain (it's a standalone module with no side effects).
     mod_name = "transformers.utils.versions"
     if mod_name not in _sys.modules:
-        spec = _ilu.find_spec(mod_name)
+        try:
+            spec = _ilu.find_spec(mod_name)
+        except (ModuleNotFoundError, ValueError):
+            return
         if spec and spec.loader:
             import types as _types
             mod = _types.ModuleType(mod_name)

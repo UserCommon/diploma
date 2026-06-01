@@ -96,6 +96,17 @@ services:
         condition: service_started
     command: python -m app.workers.worker
 
+  # ── Frontend ───────────────────────────────────────────────────────────────
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev -- --host 0.0.0.0
+
 volumes:
   pgdata:
   accessories_storage:
