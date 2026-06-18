@@ -1,4 +1,4 @@
-# AI Car Tuning Editor
+# О приложении
 
 Веб-приложение для визуального тюнинга автомобилей с помощью ИИ. Пользователь загружает фото машины, описывает желаемые изменения («поставь карбоновый спойлер», «смени колёса»), а ИИ-агент самостоятельно ищет деталь в базе, сегментирует нужную область и генерирует фотореалистичный результат.
 
@@ -23,33 +23,20 @@ diploma_fixed/
 
 ## Быстрый старт
 
-### 1. Инфраструктура (postgres + redis + accessories)
+### 1. Инфраструктура (postgres + redis + accessories + frontend)
 
 ```bash
 docker-compose up -d
 ```
 
-### 2. Core Service (запускается локально — требует ML-моделей)
-
-```bash
-cd core_service
-cp .env.example .env   # заполни ключи
-uv sync
-uv run uvicorn app.main:app --port 8001 --reload &
-uv run python -m app.workers.worker &
-```
-
-### 3. Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
+### Локально без контейнеров
+Чтобы развернуть без контейнеров смотрите `INSTRUCTIONS.md`
 
 Открой `http://localhost:5173`
 
 ## Переменные окружения (core_service/.env)
+
+Для POLZA_AI_API_KEY, прилагаю ключ на 200 рублей генераций: pza_c9TngHDFkhuvtE-fme4dML1RcqM28Bm4
 
 ```env
 # Инфраструктура

@@ -1,4 +1,3 @@
-# Инструкция по запуску
 
 ## 0. Получение исходников
 
@@ -28,6 +27,8 @@ cd diploma_fixed
 
 ## 2. Переменные окружения
 
+Для POLZA_AI_API_KEY, прилагаю ключ на 200 рублей генераций: pza_c9TngHDFkhuvtE-fme4dML1RcqM28Bm4
+
 Создать файл `core_service/.env`:
 
 ```env
@@ -55,6 +56,7 @@ HF_TOKEN=<твой токен>
 ```
 
 В Docker-режиме значения `DATABASE_URL`, `REDIS_URL`, `ACCESSORIES_SERVICE_URL` переопределяются в `docker-compose.yml` на внутренние имена контейнеров — менять их вручную не нужно.
+
 
 ---
 

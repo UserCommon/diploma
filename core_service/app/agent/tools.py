@@ -21,12 +21,13 @@ logger = logging.getLogger(__name__)
 
 
 @tool  # type: ignore[misc]
-async def search_parts(query: str, domain: str = "car") -> str:
+async def search_parts(query: str, domain: str = "") -> str:
     """Search the accessories library for parts matching a natural language query.
 
     Args:
         query: Description of the part to find (e.g. "carbon fibre rear spoiler")
-        domain: Filter by domain — car, moto, or interior. Default: car
+        domain: Optional domain filter — e.g. car, moto, interior. Leave empty to
+            search across all domains (use this when the product category is unknown).
 
     Returns:
         JSON list of matching parts with id, name, category, processed_image_url
@@ -44,11 +45,11 @@ async def search_parts(query: str, domain: str = "car") -> str:
 
 @tool  # type: ignore[misc]
 async def segment_object(image_url: str, text_prompt: str) -> str:
-    """Segment an object in a car image using SAM2 + GroundingDINO.
+    """Segment an object in the user's image using SAM2 + GroundingDINO.
 
     Args:
-        image_url: URL of the car image (e.g. /storage/originals/xxx.jpg)
-        text_prompt: Object to segment (e.g. "rear bumper")
+        image_url: URL of the source image (e.g. /storage/originals/xxx.jpg)
+        text_prompt: Object to segment (e.g. "rear bumper", "keyboard keys")
 
     Returns:
         URL of the generated greyscale mask image
